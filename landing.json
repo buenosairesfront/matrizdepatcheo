@@ -1,0 +1,12 @@
+{
+ "id": "matrizdepatcheo",
+ "titulo": "Matriz de patcheo",
+ "serie": "U-MA / Tool 03",
+ "descripcion": "Sintetizador modular en el navegador: matriz de clavijas al estilo EMS Synthi, arpegiador en escala y biblioteca de patches.",
+ "url": "https://buenosairesfront.github.io/matrizdepatcheo/",
+ "repo": "https://github.com/buenosairesfront/matrizdepatcheo",
+ "imagen": "https://buenosairesfront.github.io/matrizdepatcheo/docs/captura.png",
+ "icono": "https://buenosairesfront.github.io/matrizdepatcheo/favicon.svg",
+ "etiquetas": ["síntesis", "modular", "web audio", "EMS Synthi"],
+ "colores": { "fondo": "#121314", "acento": "#C2185B", "secundario": "#1FA3C7", "terciario": "#D6B21E" }
+}

@@ -1,0 +1,63 @@
+{
+ "app": "U-MA matriz de patcheo",
+ "type": "patch",
+ "version": 2,
+ "name": "Bombo analógico",
+ "data": {
+  "pins": {
+   "osc4>vcain": "r",
+   "env2>o4p": "r",
+   "env1>vcal": "r",
+   "vca>outLR": "r"
+  },
+  "P": {
+   "o1f": 261.6,
+   "o1w": "sawtooth",
+   "o2f": 262.9,
+   "o2w": "square",
+   "o3f": 349.2,
+   "o3w": "triangle",
+   "o4f": 45,
+   "f1f": 1200,
+   "f1q": 4,
+   "f2t": "bandpass",
+   "f2f": 800,
+   "f2q": 5,
+   "fd": 1.5,
+   "vb": 0,
+   "dt": 0.33,
+   "df": 0.4,
+   "rs": 2.5,
+   "l1r": 0.3,
+   "l1w": "sine",
+   "l2r": 2,
+   "l2w": "square",
+   "l3r": 5,
+   "l3w": "sawtooth",
+   "shr": 6,
+   "e1a": 0.001,
+   "e1d": 0.5,
+   "e1s": 0,
+   "e1r": 0.3,
+   "e2a": 0.001,
+   "e2d": 0.06,
+   "e2s": 0,
+   "e2r": 0.05,
+   "gl": 0,
+   "wh": 0,
+   "mv": 0.6,
+   "aSc": "pmin",
+   "aTo": "0",
+   "aPa": "chord",
+   "aMo": "up",
+   "aDi": "4",
+   "aBpm": 120,
+   "aOc": 1,
+   "aGa": 0.3
+  },
+  "arp": {
+   "on": true,
+   "latch": true
+  }
+ }
+}
