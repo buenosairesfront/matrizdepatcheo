@@ -135,6 +135,11 @@ El valor de la clavija se multiplica por la **escala del destino** (ver la tabla
 
 Debajo del teclado hay una tarjeta por módulo. Las perillas fijan el **valor base**; lo que conectás en la matriz se suma a ese valor.
 
+- **Faders:** cada valor continuo se mueve con un fader; la barra se llena con el valor.
+- **Botones con silueta:** la onda (sierra, cuadrada, triángulo, seno) y el tipo de filtro se eligen con botones que muestran su forma. En el arpegiador, la escala muestra sus notas en 12 puntos, la tónica es un mini teclado y patrón, recorrido y división tienen su ícono.
+- **Pantalla del módulo:** cada tarjeta dibuja en vivo su forma: la onda de osciladores y LFO, la curva del filtro, la ADSR de las envolventes, el plegado, las repeticiones del delay, la cola de la reverb y los escalones del sample & hold.
+- **Pastilla en la matriz:** tocá el nombre de una fuente (las filas con ▸) y se abre su tarjeta ahí mismo, al lado de la fila. Los cambios se reflejan en la tarjeta de abajo, que sigue en su lugar. Se cierra con ×, con Esc o tocando afuera.
+
 | Módulo | Perillas | Rango |
 | --- | --- | --- |
 | OSC 1 | Frecuencia, Onda | 20–2000 Hz (261,6) · sierra |

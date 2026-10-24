@@ -16,6 +16,7 @@ Es parte de las herramientas de **Buenos Aires Front** (U-MA / Tool 03).
 - **Teclado** en pantalla y con la compu (teclas `A W S E D F T G Y H U J K`), con glide y gate fijo.
 - **Arpegiador** en escala: 8 escalas (incluye Hirajoshi e In sen), patrón acorde o escala, 4 recorridos, divisiones hasta 1/16 y tempo de 40 a 240 bpm.
 - **Osciloscopio** con onda y espectro.
+- **Controles visuales:** faders, botones con la silueta de cada onda y filtro, y una pantalla por módulo con su forma en vivo. Tocando una fuente en la matriz se abren sus controles ahí mismo.
 - **12 patches clásicos de fábrica** y biblioteca propia: guardar en el navegador, copiar como código o exportar e importar archivos `.json`.
 - Limitador a la salida, tema claro y oscuro, funciona en celular.
 
