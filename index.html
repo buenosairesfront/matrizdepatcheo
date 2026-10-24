@@ -222,6 +222,11 @@ canvas.scope{width:100%;height:150px;display:block;margin-top:6px}
 .toast.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* ----- idiomas ----- */
+.top select.bi{display:block;-webkit-appearance:none;appearance:none;font:600 11px/1 var(--mono);text-align:center;text-align-last:center;cursor:pointer;padding:0 8px}
+@media (max-width:620px){.top select.bi{padding:0 5px;min-width:0;font-size:10px}.top .bt b{font-size:19px}}
+html:lang(zh) *,html:lang(ja) *,html:lang(hi) *{letter-spacing:0!important}
+html:lang(zh) .ch span,html:lang(ja) .ch span{text-orientation:sideways}
 </style>
 </head>
 <body>
@@ -260,6 +265,7 @@ canvas.scope{width:100%;height:150px;display:block;margin-top:6px}
     </div>
     <div class="bt"><i class="bl">U-MA / TOOL 03</i><b>matriz de patcheo</b><span id="pname"></span></div>
     <span class="led" id="led" aria-hidden="true"></span>
+    <select class="bi" id="lang" aria-label="Idioma"></select>
     <button class="bi go" id="bPower" aria-label="Encender audio"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 1.5v6"/><path d="M4.2 4a5.5 5.5 0 1 0 7.6 0"/></svg></button>
     <button class="bi" id="bLib" aria-label="Patches guardados"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M1.5 3.5h5l1.5 2h6.5v8h-13z"/></svg></button>
   </header>
@@ -336,6 +342,288 @@ canvas.scope{width:100%;height:150px;display:block;margin-top:6px}
 <script>
 (function(){
 "use strict";
+
+/* ================== idiomas ================== */
+/* cada fila: [español (clave), inglés, alemán, chino, japonés, hindi] */
+const LANGS={es:'ES',en:'EN',de:'DE',zh:'中文',ja:'日本語',hi:'हिन्दी'};
+const LOC={es:'es-AR',en:'en-GB',de:'de-DE',zh:'zh-CN',ja:'ja-JP',hi:'hi-IN'};
+const LANGK='umamp-lang';
+const TXT=[
+ // página
+ ['Matriz de patcheo / U-MA','Patch matrix / U-MA','Patchmatrix / U-MA','跳线矩阵 / U-MA','パッチマトリクス / U-MA','पैच मैट्रिक्स / U-MA'],
+ ['matriz de patcheo','patch matrix','Patchmatrix','跳线矩阵','パッチマトリクス','पैच मैट्रिक्स'],
+ ['Idioma','Language','Sprache','语言','言語','भाषा'],
+ ['Encender audio','Turn audio on','Audio einschalten','开启音频','オーディオをオン','ऑडियो चालू करें'],
+ ['Audio encendido','Audio on','Audio an','音频已开启','オーディオ オン','ऑडियो चालू है'],
+ ['Patches guardados','Saved patches','Gespeicherte Patches','已保存的音色','保存したパッチ','सहेजे गए पैच'],
+ ['Matriz','Matrix','Matrix','矩阵','マトリクス','मैट्रिक्स'],
+ ['Interpretación','Performance','Spielen','演奏','演奏','वादन'],
+ ['24 fuentes × 29 destinos /','24 sources × 29 destinations /','24 Quellen × 29 Ziele /','24 个信号源 × 29 个目标 /','ソース 24 × デスティネーション 29 /','24 स्रोत × 29 गंतव्य /'],
+ ['Azar','Random','Zufall','随机','ランダム','रैंडम'],
+ ['Limpiar','Clear','Leeren','清空','クリア','साफ़ करें'],
+ ['Patches','Patches','Patches','音色库','パッチ','पैच'],
+ ['Clavija','Pin','Stecker','插针','ピン','पिन'],
+ ['Tocá un punto de la matriz para poner o sacar una clavija. Tocá con otra clavija para cambiar la intensidad.','Tap a point in the matrix to insert or remove a pin. Tap with a different pin to change the amount.','Tippe auf einen Punkt der Matrix, um einen Stecker zu setzen oder zu entfernen. Mit einem anderen Stecker änderst du die Stärke.','点击矩阵中的一个点来插入或拔出插针。换一种插针再点可改变强度。','マトリクスの点をタップしてピンを挿す／抜く。別のピンでタップすると強さが変わります。','पिन लगाने या हटाने के लिए मैट्रिक्स के किसी बिंदु को छुएँ। तीव्रता बदलने के लिए दूसरी पिन से छुएँ।'],
+ ['teclas A W S E D F T G Y H U J K','keys A W S E D F T G Y H U J K','Tasten A W S E D F T G Y H U J K','按键 A W S E D F T G Y H U J K','キー A W S E D F T G Y H U J K','कुंजियाँ A W S E D F T G Y H U J K'],
+ ['Bajar octava','Octave down','Oktave tiefer','降低八度','1オクターブ下','ऑक्टेव नीचे'],
+ ['Subir octava','Octave up','Oktave höher','升高八度','1オクターブ上','ऑक्टेव ऊपर'],
+ ['Gate fijo','Hold gate','Gate halten','门信号常开','ゲート固定','गेट होल्ड'],
+ ['arpegio en escala','scale arpeggiator','Arpeggio in Skala','音阶琶音','スケール・アルペジオ','स्केल में आर्पेजियो'],
+ ['Arpegio','Arpeggio','Arpeggio','琶音','アルペジオ','आर्पेजियो'],
+ ['Sostener','Latch','Halten','锁定','ラッチ','लैच'],
+ ['onda + espectro','wave + spectrum','Welle + Spektrum','波形 + 频谱','波形 + スペクトル','तरंग + स्पेक्ट्रम'],
+ ['Cómo se usa','How to use','Bedienung','使用方法','使い方','कैसे इस्तेमाल करें'],
+ ['manual corto','quick guide','Kurzanleitung','简明手册','クイックガイド','संक्षिप्त गाइड'],
+ ['Ejes.','Axes.','Achsen.','坐标轴。','軸。','अक्ष।'],
+ ['En el eje Y están las fuentes: salidas de osciladores, procesadores y controles. En el eje X, los destinos: entradas de audio y parámetros. Cada punto conecta una fila con una columna.','The Y axis holds the sources: outputs of oscillators, processors and controls. The X axis holds the destinations: audio inputs and parameters. Each point connects a row to a column.','Auf der Y-Achse stehen die Quellen: Ausgänge von Oszillatoren, Prozessoren und Steuerungen. Auf der X-Achse die Ziele: Audioeingänge und Parameter. Jeder Punkt verbindet eine Zeile mit einer Spalte.','Y 轴是信号源：振荡器、处理器和控制信号的输出。X 轴是目标：音频输入和参数。每个点把一行连接到一列。','Y軸はソース：オシレーター、プロセッサー、コントロールの出力。X軸はデスティネーション：オーディオ入力とパラメーター。各点が行と列をつなぎます。','Y अक्ष पर स्रोत हैं: ऑसिलेटर, प्रोसेसर और कंट्रोल के आउटपुट। X अक्ष पर गंतव्य हैं: ऑडियो इनपुट और पैरामीटर। हर बिंदु एक पंक्ति को एक कॉलम से जोड़ता है।'],
+ ['Clavijas.','Pins.','Stecker.','插针。','ピン。','पिन।'],
+ ['Cian suma 10 %, blanca 35 %, magenta 100 % y amarilla resta 35 % (invierte la señal). En afinación, la magenta equivale a una octava por unidad: el teclado necesita magenta para quedar afinado.','Cyan adds 10 %, white 35 %, magenta 100 % and yellow subtracts 35 % (it inverts the signal). On pitch inputs, magenta equals one octave per unit: the keyboard needs magenta to stay in tune.','Cyan addiert 10 %, Weiß 35 %, Magenta 100 % und Gelb zieht 35 % ab (invertiert das Signal). Bei der Stimmung entspricht Magenta einer Oktave pro Einheit: Die Tastatur braucht Magenta, damit sie stimmt.','青色加 10%，白色 35%，品红 100%，黄色减 35%（反相信号）。在音高输入上，品红相当于每单位一个八度：键盘需要用品红插针才能准确调音。','シアンは10%、ホワイトは35%、マゼンタは100%を加え、イエローは35%を引きます（信号を反転）。ピッチ入力ではマゼンタが1単位＝1オクターブ。鍵盤の音程を合わせるにはマゼンタが必要です。','सियान 10 % जोड़ता है, सफ़ेद 35 %, मैजेंटा 100 % और पीला 35 % घटाता है (सिग्नल उलट देता है)। पिच इनपुट पर मैजेंटा एक यूनिट में एक ऑक्टेव के बराबर है: कीबोर्ड को सुर में रखने के लिए मैजेंटा चाहिए।'],
+ ['Arpegio.','Arpeggio.','Arpeggio.','琶音。','アルペジオ。','आर्पेजियो।'],
+ ['Activalo y con “Sostener” sigue sonando solo. La nota que tocás elige desde dónde arranca, siempre dentro de la escala y la tónica elegidas.','Turn it on and with “Latch” it keeps playing by itself. The note you play picks where it starts, always within the chosen scale and root.','Einschalten, und mit „Halten“ spielt es von selbst weiter. Die gespielte Note bestimmt den Startpunkt, immer innerhalb von gewählter Skala und Grundton.','打开后配合“锁定”会自动持续演奏。你按下的音决定从哪里开始，始终在所选音阶和主音之内。','オンにして「ラッチ」を使うと自動で鳴り続けます。弾いた音が開始位置を決め、常に選んだスケールとルートの中で動きます。','इसे चालू करें और “लैच” के साथ यह अपने-आप बजता रहता है। आप जो सुर बजाते हैं वह तय करता है कि यह कहाँ से शुरू हो, हमेशा चुने गए स्केल और मूल सुर के भीतर।'],
+ ['Guardar.','Save.','Speichern.','保存。','保存。','सहेजना।'],
+ ['“Patches” guarda tus patcheos en este navegador, y permite copiarlos como código o pasarlos en un archivo .json.','“Patches” stores your patches in this browser, and lets you copy them as code or share them as a .json file.','„Patches“ speichert deine Patches in diesem Browser und lässt sie als Code kopieren oder als .json-Datei weitergeben.','“音色库”把你的跳线保存在本浏览器中，也可以复制为代码，或以 .json 文件分享。','「パッチ」でパッチをこのブラウザに保存でき、コードとしてコピーしたり .json ファイルで共有したりできます。','“पैच” आपके पैच इस ब्राउज़र में सहेजता है, और उन्हें कोड के रूप में कॉपी करने या .json फ़ाइल में भेजने देता है।'],
+ ['Cuidado.','Careful.','Vorsicht.','注意。','注意。','सावधान।'],
+ ['Los lazos de realimentación pueden subir mucho. La salida tiene limitador, pero bajá el volumen si usás auriculares.','Feedback loops can get very loud. The output has a limiter, but turn the volume down if you use headphones.','Rückkopplungsschleifen können sehr laut werden. Der Ausgang hat einen Limiter, aber dreh die Lautstärke runter, wenn du Kopfhörer benutzt.','反馈回路可能会变得很响。输出端有限幅器，但使用耳机时请调低音量。','フィードバック・ループは音量が大きくなることがあります。出力にはリミッターがありますが、ヘッドホン使用時は音量を下げてください。','फ़ीडबैक लूप बहुत तेज़ हो सकते हैं। आउटपुट में लिमिटर है, लेकिन हेडफ़ोन इस्तेमाल करें तो आवाज़ कम कर दें।'],
+ ['Cerrar','Close','Schließen','关闭','閉じる','बंद करें'],
+ ['Guardar el actual','Save current','Aktuellen speichern','保存当前','現在のパッチを保存','मौजूदा सहेजें'],
+ ['queda en este navegador','stays in this browser','bleibt in diesem Browser','保存在本浏览器','このブラウザに保存','इसी ब्राउज़र में रहता है'],
+ ['Nombre del patch','Patch name','Patch-Name','音色名称','パッチ名','पैच का नाम'],
+ ['Guardar','Save','Speichern','保存','保存','सहेजें'],
+ ['Mis patcheos','My patches','Meine Patches','我的音色','マイパッチ','मेरे पैच'],
+ ['Clásicos','Classics','Klassiker','经典','クラシック','क्लासिक'],
+ ['12 patches de fábrica','12 factory patches','12 Werks-Patches','12 个出厂音色','ファクトリーパッチ 12 種','12 फ़ैक्टरी पैच'],
+ ['Código del patch','Patch code','Patch-Code','音色代码','パッチコード','पैच कोड'],
+ ['para copiar y pegar','to copy and paste','zum Kopieren und Einfügen','用于复制粘贴','コピー＆ペースト用','कॉपी और पेस्ट के लिए'],
+ ['Copiar código','Copy code','Code kopieren','复制代码','コードをコピー','कोड कॉपी करें'],
+ ['Cargar este código','Load this code','Diesen Code laden','加载此代码','このコードを読み込む','यह कोड लोड करें'],
+ ['Archivo','File','Datei','文件','ファイル','फ़ाइल'],
+ ['Descargar patch actual','Download current patch','Aktuellen Patch herunterladen','下载当前音色','現在のパッチをダウンロード','मौजूदा पैच डाउनलोड करें'],
+ ['Descargar biblioteca','Download library','Bibliothek herunterladen','下载音色库','ライブラリをダウンロード','लाइब्रेरी डाउनलोड करें'],
+ ['Abrir archivo','Open file','Datei öffnen','打开文件','ファイルを開く','फ़ाइल खोलें'],
+ ['Si la descarga no arranca en tu navegador, usá “Copiar código” y guardalo donde quieras.','If the download doesn’t start in your browser, use “Copy code” and save it wherever you like.','Wenn der Download in deinem Browser nicht startet, nutze „Code kopieren“ und speichere ihn, wo du willst.','如果浏览器无法开始下载，请使用“复制代码”，然后保存到任意位置。','ブラウザでダウンロードが始まらない場合は「コードをコピー」を使い、好きな場所に保存してください。','अगर आपके ब्राउज़र में डाउनलोड शुरू न हो, तो “कोड कॉपी करें” इस्तेमाल करें और जहाँ चाहें सहेज लें।'],
+ // clavijas
+ ['Cian','Cyan','Cyan','青色','シアン','सियान'],
+ ['Blanca','White','Weiß','白色','ホワイト','सफ़ेद'],
+ ['Magenta','Magenta','Magenta','品红','マゼンタ','मैजेंटा'],
+ ['Amarilla','Yellow','Gelb','黄色','イエロー','पीला'],
+ // fuentes y módulos
+ ['Ruido blanco','White noise','Weißes Rauschen','白噪声','ホワイトノイズ','व्हाइट नॉइज़'],
+ ['Ring mod','Ring mod','Ringmod','环形调制','リング変調','रिंग मॉड'],
+ ['Filtro 1','Filter 1','Filter 1','滤波器 1','フィルター 1','फ़िल्टर 1'],
+ ['Filtro 2','Filter 2','Filter 2','滤波器 2','フィルター 2','फ़िल्टर 2'],
+ ['Plegador','Wavefolder','Wavefolder','折叠器','ウェーブフォルダー','वेवफ़ोल्डर'],
+ ['Delay','Delay','Delay','延迟','ディレイ','डिले'],
+ ['Reverb','Reverb','Hall','混响','リバーブ','रिवर्ब'],
+ ['Sample & hold','Sample & hold','Sample & Hold','采样保持','サンプル＆ホールド','सैंपल एंड होल्ड'],
+ ['Envolvente 1','Envelope 1','Hüllkurve 1','包络 1','エンベロープ 1','एनवेलप 1'],
+ ['Envolvente 2','Envelope 2','Hüllkurve 2','包络 2','エンベロープ 2','एनवेलप 2'],
+ ['Teclado afin.','Keyboard pitch','Tastatur-Pitch','键盘音高','鍵盤ピッチ','कीबोर्ड पिच'],
+ ['Gate','Gate','Gate','门信号','ゲート','गेट'],
+ ['Joystick X','Joystick X','Joystick X','摇杆 X','ジョイスティック X','जॉयस्टिक X'],
+ ['Joystick Y','Joystick Y','Joystick Y','摇杆 Y','ジョイスティック Y','जॉयस्टिक Y'],
+ ['Rueda','Wheel','Rad','滚轮','ホイール','व्हील'],
+ ['Continua +1','DC +1','DC +1','直流 +1','DC +1','DC +1'],
+ ['Teclado y rueda','Keyboard & wheel','Tastatur & Rad','键盘与滚轮','鍵盤とホイール','कीबोर्ड और व्हील'],
+ ['Salida','Output','Ausgang','输出','出力','आउटपुट'],
+ // destinos
+ ['Salida L+R','Output L+R','Ausgang L+R','输出 L+R','出力 L+R','आउटपुट L+R'],
+ ['Salida L','Output L','Ausgang L','输出 L','出力 L','आउटपुट L'],
+ ['Salida R','Output R','Ausgang R','输出 R','出力 R','आउटपुट R'],
+ ['Filtro 1 in','Filter 1 in','Filter 1 in','滤波器1 输入','フィルター1 入力','फ़िल्टर 1 इन'],
+ ['Filtro 2 in','Filter 2 in','Filter 2 in','滤波器2 输入','フィルター2 入力','फ़िल्टर 2 इन'],
+ ['Ring A','Ring A','Ring A','环调 A','リング A','रिंग A'],
+ ['Ring B','Ring B','Ring B','环调 B','リング B','रिंग B'],
+ ['Plegador in','Folder in','Folder in','折叠器输入','フォルダー入力','फ़ोल्डर इन'],
+ ['VCA in','VCA in','VCA in','VCA 输入','VCA 入力','VCA इन'],
+ ['Delay in','Delay in','Delay in','延迟输入','ディレイ入力','डिले इन'],
+ ['Reverb in','Reverb in','Hall in','混响输入','リバーブ入力','रिवर्ब इन'],
+ ['OSC 1 afin.','OSC 1 pitch','OSC 1 Pitch','OSC 1 音高','OSC 1 ピッチ','OSC 1 पिच'],
+ ['OSC 2 afin.','OSC 2 pitch','OSC 2 Pitch','OSC 2 音高','OSC 2 ピッチ','OSC 2 पिच'],
+ ['OSC 3 afin.','OSC 3 pitch','OSC 3 Pitch','OSC 3 音高','OSC 3 ピッチ','OSC 3 पिच'],
+ ['OSC 4 afin.','OSC 4 pitch','OSC 4 Pitch','OSC 4 音高','OSC 4 ピッチ','OSC 4 पिच'],
+ ['OSC 1 FM lin.','OSC 1 lin. FM','OSC 1 lin. FM','OSC 1 线性FM','OSC 1 リニアFM','OSC 1 लीनियर FM'],
+ ['OSC 2 FM lin.','OSC 2 lin. FM','OSC 2 lin. FM','OSC 2 线性FM','OSC 2 リニアFM','OSC 2 लीनियर FM'],
+ ['Filtro 1 corte','Filter 1 cutoff','Filter 1 Cutoff','滤波器1 截止','フィルタ1 周波数','फ़िल्टर 1 कटऑफ़'],
+ ['Filtro 1 reson.','Filter 1 reson.','Filter 1 Reso.','滤波器1 共振','フィルタ1 共振','फ़िल्टर 1 रेज़ो.'],
+ ['Filtro 2 corte','Filter 2 cutoff','Filter 2 Cutoff','滤波器2 截止','フィルタ2 周波数','फ़िल्टर 2 कटऑफ़'],
+ ['Filtro 2 reson.','Filter 2 reson.','Filter 2 Reso.','滤波器2 共振','フィルタ2 共振','फ़िल्टर 2 रेज़ो.'],
+ ['Plegador drive','Folder drive','Folder Drive','折叠器驱动','フォルダー ドライブ','फ़ोल्डर ड्राइव'],
+ ['VCA nivel','VCA level','VCA Pegel','VCA 电平','VCA レベル','VCA लेवल'],
+ ['Delay tiempo','Delay time','Delay-Zeit','延迟时间','ディレイ タイム','डिले टाइम'],
+ ['Delay realim.','Delay feedback','Delay-Feedback','延迟反馈','ディレイ FB','डिले फ़ीडबैक'],
+ ['LFO 1 veloc.','LFO 1 rate','LFO 1 Rate','LFO 1 速率','LFO 1 レート','LFO 1 रेट'],
+ ['LFO 2 veloc.','LFO 2 rate','LFO 2 Rate','LFO 2 速率','LFO 2 レート','LFO 2 रेट'],
+ ['LFO 3 veloc.','LFO 3 rate','LFO 3 Rate','LFO 3 速率','LFO 3 レート','LFO 3 रेट'],
+ ['S&H entrada','S&H input','S&H Eingang','S&H 输入','S&H 入力','S&H इनपुट'],
+ // qué hace cada destino
+ ['entra al filtro pasa-bajos 1','goes into low-pass filter 1','geht in Tiefpassfilter 1','进入低通滤波器 1','ローパスフィルター1に入る','लो-पास फ़िल्टर 1 में जाता है'],
+ ['entra al filtro 2 (pasa-banda de fábrica)','goes into filter 2 (band-pass by default)','geht in Filter 2 (ab Werk Bandpass)','进入滤波器 2（默认带通）','フィルター2に入る（初期設定はバンドパス）','फ़िल्टर 2 में जाता है (डिफ़ॉल्ट रूप से बैंड-पास)'],
+ ['es la portadora del modulador en anillo','is the carrier of the ring modulator','ist der Träger des Ringmodulators','是环形调制器的载波','リング変調のキャリアになる','रिंग मॉड्यूलेटर का कैरियर है'],
+ ['multiplica la entrada A: anillo con audio, trémolo con LFO','multiplies input A: ring mod with audio, tremolo with an LFO','multipliziert Eingang A: Ringmodulation mit Audio, Tremolo mit LFO','与输入 A 相乘：音频得到环形调制，LFO 得到颤音','入力Aに掛け算される（オーディオならリング変調、LFOならトレモロ）','इनपुट A से गुणा करता है: ऑडियो से रिंग मॉड, LFO से ट्रेमोलो'],
+ ['entra al plegador de onda','goes into the wavefolder','geht in den Wavefolder','进入波形折叠器','ウェーブフォルダーに入る','वेवफ़ोल्डर में जाता है'],
+ ['entra al amplificador controlado','goes into the voltage-controlled amplifier','geht in den gesteuerten Verstärker','进入压控放大器','VCA（電圧制御アンプ）に入る','नियंत्रित एम्पलीफ़ायर में जाता है'],
+ ['entra al delay','goes into the delay','geht ins Delay','进入延迟','ディレイに入る','डिले में जाता है'],
+ ['entra a la reverb','goes into the reverb','geht in den Hall','进入混响','リバーブに入る','रिवर्ब में जाता है'],
+ ['abre y cierra el filtro 1 (brillo)','opens and closes filter 1 (brightness)','öffnet und schließt Filter 1 (Helligkeit)','开合滤波器 1（亮度）','フィルター1を開閉する（明るさ）','फ़िल्टर 1 को खोलता और बंद करता है (चमक)'],
+ ['sube y baja el pico de resonancia del filtro 1','raises and lowers the resonance peak of filter 1','hebt und senkt die Resonanzspitze von Filter 1','升降滤波器 1 的共振峰','フィルター1のレゾナンスのピークを上下させる','फ़िल्टर 1 की रेज़ोनेंस चोटी को ऊपर-नीचे करता है'],
+ ['mueve la banda del filtro 2 (efecto vocal / wah)','moves the band of filter 2 (vocal / wah effect)','verschiebt das Band von Filter 2 (Vokal- / Wah-Effekt)','移动滤波器 2 的频带（人声 / 哇音效果）','フィルター2の帯域を動かす（ボーカル／ワウ効果）','फ़िल्टर 2 का बैंड खिसकाता है (वोकल / वा इफ़ेक्ट)'],
+ ['afina o ensancha la banda del filtro 2','narrows or widens the band of filter 2','macht das Band von Filter 2 schmaler oder breiter','收窄或加宽滤波器 2 的频带','フィルター2の帯域を狭めたり広げたりする','फ़िल्टर 2 का बैंड पतला या चौड़ा करता है'],
+ ['cambia cuántas veces se pliega la onda (armónicos)','changes how many times the wave folds (harmonics)','ändert, wie oft die Welle gefaltet wird (Obertöne)','改变波形折叠的次数（谐波）','波が折り返される回数を変える（倍音）','बदलता है कि तरंग कितनी बार मुड़ती है (हार्मोनिक्स)'],
+ ['controla el volumen del VCA; ideal para una envolvente','controls the VCA volume; ideal for an envelope','steuert die Lautstärke des VCA; ideal für eine Hüllkurve','控制 VCA 的音量；适合接包络','VCAの音量をコントロールする（エンベロープに最適）','VCA की आवाज़ नियंत्रित करता है; एनवेलप के लिए आदर्श'],
+ ['estira el tiempo del delay: vibrato de cinta y glitches','stretches the delay time: tape vibrato and glitches','dehnt die Delay-Zeit: Bandvibrato und Glitches','拉伸延迟时间：磁带颤音和故障音','ディレイタイムを伸縮させる（テープ風ビブラートやグリッチ）','डिले टाइम खींचता है: टेप वाइब्रेटो और ग्लिच'],
+ ['cambia cuántas repeticiones da el delay','changes how many repeats the delay gives','ändert, wie viele Wiederholungen das Delay erzeugt','改变延迟的重复次数','ディレイの繰り返し回数を変える','बदलता है कि डिले कितनी बार दोहराता है'],
+ ['acelera o frena el LFO 1','speeds up or slows down LFO 1','beschleunigt oder bremst LFO 1','加快或减慢 LFO 1','LFO 1を速めたり遅くしたりする','LFO 1 को तेज़ या धीमा करता है'],
+ ['acelera o frena el LFO 2','speeds up or slows down LFO 2','beschleunigt oder bremst LFO 2','加快或减慢 LFO 2','LFO 2を速めたり遅くしたりする','LFO 2 को तेज़ या धीमा करता है'],
+ ['acelera o frena el LFO 3','speeds up or slows down LFO 3','beschleunigt oder bremst LFO 3','加快或减慢 LFO 3','LFO 3を速めたり遅くしたりする','LFO 3 को तेज़ या धीमा करता है'],
+ ['es la señal que el sample & hold congela en cada pulso','is what the sample & hold freezes on each pulse','ist das, was Sample & Hold bei jedem Puls einfriert','是采样保持在每个脉冲时冻结的值','サンプル＆ホールドが各パルスで固定する値になる','वह मान है जिसे सैंपल एंड होल्ड हर पल्स पर जमा देता है'],
+ // ondas, filtros y grupos
+ ['Sierra','Saw','Sägezahn','锯齿波','ノコギリ','सॉटूथ'],
+ ['Cuadrada','Square','Rechteck','方波','矩形','स्क्वेयर'],
+ ['Triángulo','Triangle','Dreieck','三角波','三角','त्रिकोण'],
+ ['Seno','Sine','Sinus','正弦波','サイン','साइन'],
+ ['Pasa-bajos','Low-pass','Tiefpass','低通','ローパス','लो-पास'],
+ ['Pasa-altos','High-pass','Hochpass','高通','ハイパス','हाई-पास'],
+ ['Pasa-banda','Band-pass','Bandpass','带通','バンドパス','बैंड-पास'],
+ ['Rechaza-banda','Notch','Notch','陷波','ノッチ','नॉच'],
+ ['Fuente de audio','Audio source','Audioquelle','音频源','音源','ऑडियो स्रोत'],
+ ['Proceso','Processor','Bearbeitung','处理','プロセッサー','प्रोसेस'],
+ ['Control','Control','Steuerung','控制','コントロール','कंट्रोल'],
+ // controles
+ ['Frecuencia','Frequency','Frequenz','频率','周波数','फ़्रीक्वेंसी'],
+ ['Onda','Wave','Welle','波形','波形','तरंग'],
+ ['Corte','Cutoff','Cutoff','截止','カットオフ','कटऑफ़'],
+ ['Resonancia','Resonance','Resonanz','共振','レゾナンス','रेज़ोनेंस'],
+ ['Tipo','Type','Typ','类型','タイプ','प्रकार'],
+ ['Drive','Drive','Drive','驱动','ドライブ','ड्राइव'],
+ ['Nivel base','Base level','Grundpegel','基础电平','ベースレベル','बेस लेवल'],
+ ['Tiempo','Time','Zeit','时间','タイム','समय'],
+ ['Realimentación','Feedback','Feedback','反馈','フィードバック','फ़ीडबैक'],
+ ['Tamaño','Size','Größe','大小','サイズ','आकार'],
+ ['Velocidad','Rate','Rate','速率','レート','रेट'],
+ ['Ataque','Attack','Attack','起音','アタック','अटैक'],
+ ['Caída','Decay','Decay','衰减','ディケイ','डिके'],
+ ['Sostén','Sustain','Sustain','延持','サステイン','सस्टेन'],
+ ['Relajación','Release','Release','释音','リリース','रिलीज़'],
+ ['Glide','Glide','Glide','滑音','グライド','ग्लाइड'],
+ ['Volumen','Volume','Lautstärke','音量','ボリューム','वॉल्यूम'],
+ // arpegiador
+ ['Escala','Scale','Skala','音阶','スケール','स्केल'],
+ ['Tónica','Root','Grundton','主音','ルート','मूल सुर'],
+ ['Patrón','Pattern','Muster','模式','パターン','पैटर्न'],
+ ['Recorrido','Direction','Richtung','走向','方向','दिशा'],
+ ['División','Division','Teilung','分割','分割','डिवीज़न'],
+ ['Tempo','Tempo','Tempo','速度','テンポ','टेम्पो'],
+ ['Octavas','Octaves','Oktaven','八度数','オクターブ','ऑक्टेव'],
+ ['Duración','Length','Länge','时值','長さ','अवधि'],
+ ['Acorde','Chord','Akkord','和弦','コード','कॉर्ड'],
+ ['Sube','Up','Auf','上行','上昇','ऊपर'],
+ ['Baja','Down','Ab','下行','下降','नीचे'],
+ ['Sube y baja','Up & down','Auf & ab','上下行','上下','ऊपर-नीचे'],
+ ['1/8 tresillo','1/8 triplet','1/8 Triole','1/8 三连音','1/8 3連','1/8 ट्रिपलेट'],
+ ['Pentatónica mayor','Major pentatonic','Dur-Pentatonik','大调五声','メジャー・ペンタ','मेजर पेंटाटोनिक'],
+ ['Pentatónica menor','Minor pentatonic','Moll-Pentatonik','小调五声','マイナー・ペンタ','माइनर पेंटाटोनिक'],
+ ['Mayor','Major','Dur','大调','メジャー','मेजर'],
+ ['Menor natural','Natural minor','Natürlich Moll','自然小调','ナチュラル・マイナー','नैचुरल माइनर'],
+ ['Dórica','Dorian','Dorisch','多利亚','ドリアン','डोरियन'],
+ ['Lidia','Lydian','Lydisch','利底亚','リディアン','लिडियन'],
+ ['Hirajoshi','Hirajoshi','Hirajoshi','平调子','平調子','हिराजोशी'],
+ ['In sen','In sen','In Sen','阴旋','陰旋','इन सेन'],
+ // patches de fábrica
+ ['Básico','Basic','Basis','基础','ベーシック','बुनियादी'],
+ ['Campanas','Bells','Glocken','钟声','ベル','घंटियाँ'],
+ ['S&H clásico','Classic S&H','Klassisches S&H','经典 S&H','クラシック S&H','क्लासिक S&H'],
+ ['FM metálico','Metallic FM','Metallische FM','金属 FM','メタリック FM','धात्विक FM'],
+ ['Caos realimentado','Feedback chaos','Rückkopplungschaos','反馈混沌','フィードバック・カオス','फ़ीडबैक कैओस'],
+ ['Drone Synthi','Synthi drone','Synthi-Drone','Synthi 持续音','Synthi ドローン','Synthi ड्रोन'],
+ ['Percusión de ruido','Noise percussion','Rausch-Percussion','噪声打击乐','ノイズ・パーカッション','नॉइज़ पर्कशन'],
+ ['Bajo ácido','Acid bass','Acid-Bass','酸性贝斯','アシッド・ベース','एसिड बास'],
+ ['Pad analógico','Analog pad','Analog-Pad','模拟铺底','アナログ・パッド','एनालॉग पैड'],
+ ['Viento','Wind','Wind','风','風','हवा'],
+ ['Bombo analógico','Analog kick','Analog-Kick','模拟底鼓','アナログ・キック','एनालॉग किक'],
+ ['Escuela de Berlín','Berlin School','Berliner Schule','柏林学派','ベルリン・スクール','बर्लिन स्कूल'],
+ ['Sin título','Untitled','Ohne Titel','未命名','無題','बिना शीर्षक'],
+ ['Importado','Imported','Importiert','已导入','インポート','आयातित'],
+ ['Tocá el teclado: dos osciladores, filtro con envolvente y VCA.','Play the keyboard: two oscillators, a filter with envelope and a VCA.','Spiel auf der Tastatur: zwei Oszillatoren, Filter mit Hüllkurve und VCA.','弹奏键盘：两个振荡器、带包络的滤波器和 VCA。','鍵盤を弾いてみよう：オシレーター2基、エンベロープ付きフィルター、VCA。','कीबोर्ड बजाएँ: दो ऑसिलेटर, एनवेलप वाला फ़िल्टर और VCA।'],
+ ['OSC 1 y OSC 3 multiplicados en el ring. Mové la frecuencia del OSC 3.','OSC 1 and OSC 3 multiplied in the ring mod. Move the frequency of OSC 3.','OSC 1 und OSC 3 im Ringmodulator multipliziert. Verändere die Frequenz von OSC 3.','OSC 1 与 OSC 3 在环形调制器中相乘。调节 OSC 3 的频率。','OSC 1とOSC 3をリング変調で掛け合わせます。OSC 3の周波数を動かしてみて。','OSC 1 और OSC 3 रिंग मॉड में गुणा होते हैं। OSC 3 की फ़्रीक्वेंसी बदलें।'],
+ ['El sample & hold salta el filtro resonante. Mantené una nota o usá el arpegio.','The sample & hold makes the resonant filter jump. Hold a note or use the arpeggio.','Das Sample & Hold lässt den resonanten Filter springen. Halte eine Note oder nutze das Arpeggio.','采样保持让共振滤波器跳动。按住一个音或使用琶音。','サンプル＆ホールドがフィルターを跳ねさせます。音を伸ばすかアルペジオを使って。','सैंपल एंड होल्ड रेज़ोनेंट फ़िल्टर को उछालता है। एक सुर दबाए रखें या आर्पेजियो चलाएँ।'],
+ ['OSC 4 modula a OSC 1. Cambiá la frecuencia del OSC 4 para otros metales.','OSC 4 modulates OSC 1. Change the frequency of OSC 4 for other metals.','OSC 4 moduliert OSC 1. Ändere die Frequenz von OSC 4 für andere Metallklänge.','OSC 4 调制 OSC 1。改变 OSC 4 的频率可得到其他金属音色。','OSC 4がOSC 1を変調。OSC 4の周波数を変えると別の金属音に。','OSC 4, OSC 1 को मॉड्यूलेट करता है। दूसरी धात्विक ध्वनियों के लिए OSC 4 की फ़्रीक्वेंसी बदलें।'],
+ ['Lazo plegador, filtro 2 y delay. Suena solo, sin teclado.','Loop of wavefolder, filter 2 and delay. Plays by itself, no keyboard needed.','Schleife aus Wavefolder, Filter 2 und Delay. Klingt von selbst, ohne Tastatur.','折叠器、滤波器 2 和延迟组成回路。无需键盘，自动发声。','フォルダー、フィルター2、ディレイのループ。鍵盤なしで自動的に鳴ります。','वेवफ़ोल्डर, फ़िल्टर 2 और डिले का लूप। बिना कीबोर्ड के अपने-आप बजता है।'],
+ ['Suena solo. Mové el joystick: X cambia la resonancia, Y el corte.','Plays by itself. Move the joystick: X changes resonance, Y the cutoff.','Klingt von selbst. Bewege den Joystick: X ändert die Resonanz, Y den Cutoff.','自动发声。移动摇杆：X 改变共振，Y 改变截止频率。','自動で鳴ります。ジョイスティックのXでレゾナンス、Yでカットオフが変わります。','अपने-आप बजता है। जॉयस्टिक हिलाएँ: X रेज़ोनेंस बदलता है, Y कटऑफ़।'],
+ ['Cada tecla afina el ruido filtrado. Tocá notas cortas.','Each key tunes the filtered noise. Play short notes.','Jede Taste stimmt das gefilterte Rauschen. Spiel kurze Noten.','每个琴键为滤波后的噪声定音。弹短音。','各キーがフィルターをかけたノイズの音程を決めます。短く弾いて。','हर कुंजी फ़िल्टर किए गए नॉइज़ का सुर तय करती है। छोटे सुर बजाएँ।'],
+ ['Línea de bajo resonante tipo 303. El arpegio corre solo; tocá otra nota para moverlo.','Resonant 303-style bass line. The arpeggio runs by itself; play another note to move it.','Resonante Basslinie im 303-Stil. Das Arpeggio läuft von selbst; spiel eine andere Note, um es zu verschieben.','303 风格的共振贝斯线。琶音自动运行；弹另一个音来移动它。','303風のレゾナント・ベースライン。アルペジオは自動で走ります。別の音を弾くと移動します。','303 जैसी रेज़ोनेंट बास लाइन। आर्पेजियो अपने-आप चलता है; उसे खिसकाने के लिए दूसरा सुर बजाएँ।'],
+ ['Tres osciladores desafinados con ataque lento. Mantené acordes largos.','Three detuned oscillators with a slow attack. Hold long chords.','Drei verstimmte Oszillatoren mit langsamem Attack. Halte lange Akkorde.','三个失谐振荡器，起音缓慢。按住长和弦。','デチューンした3基のオシレーターとゆっくりしたアタック。長い和音を伸ばして。','धीमे अटैक वाले तीन बेसुरे ऑसिलेटर। लंबे कॉर्ड दबाए रखें।'],
+ ['Ruido filtrado con tres LFO lentos. Suena solo; el joystick Y cambia el tono del viento.','Filtered noise with three slow LFOs. Plays by itself; joystick Y changes the tone of the wind.','Gefiltertes Rauschen mit drei langsamen LFOs. Klingt von selbst; Joystick Y ändert die Klangfarbe des Windes.','三个慢速 LFO 调制的滤波噪声。自动发声；摇杆 Y 改变风声的音色。','3つの遅いLFOで動くフィルター・ノイズ。自動で鳴ります。ジョイスティックのYで風の音色が変わります。','तीन धीमे LFO वाला फ़िल्टर किया नॉइज़। अपने-आप बजता है; जॉयस्टिक Y हवा का टोन बदलता है।'],
+ ['Seno con caída rápida de afinación. El arpegio lo dispara en negras.','Sine with a fast pitch drop. The arpeggio triggers it on quarter notes.','Sinus mit schnellem Pitch-Abfall. Das Arpeggio triggert ihn in Vierteln.','音高快速下降的正弦波。琶音以四分音符触发。','ピッチが素早く下がるサイン波。アルペジオが4分音符でトリガーします。','तेज़ी से गिरती पिच वाली साइन तरंग। आर्पेजियो इसे चौथाई सुरों पर बजाता है।'],
+ ['Secuencia en semicorcheas con delay y filtro que respira lento.','Sixteenth-note sequence with delay and a slowly breathing filter.','Sechzehntel-Sequenz mit Delay und langsam atmendem Filter.','十六分音符音序，配合延迟和缓慢呼吸的滤波器。','ディレイと、ゆっくり呼吸するフィルターを使った16分音符のシーケンス。','डिले और धीरे साँस लेते फ़िल्टर के साथ सोलहवें सुरों का सीक्वेंस।'],
+ // mensajes
+ ['Matriz vacía. Empezá por una fuente de audio hacia <b>Salida L+R</b>.','Empty matrix. Start with an audio source into <b>Output L+R</b>.','Leere Matrix. Beginne mit einer Audioquelle zu <b>Ausgang L+R</b>.','矩阵已清空。先把一个音频源连到 <b>输出 L+R</b>。','マトリクスは空です。まず音源を <b>出力 L+R</b> へつなぎましょう。','मैट्रिक्स खाली है। किसी ऑडियो स्रोत को <b>आउटपुट L+R</b> से जोड़कर शुरू करें।'],
+ ['destinos →','destinations →','Ziele →','目标 →','デスティネーション →','गंतव्य →'],
+ ['fuentes ↓','sources ↓','Quellen ↓','信号源 ↓','ソース ↓','स्रोत ↓'],
+ ['{s} hacia {d}','{s} to {d}','{s} nach {d}','{s} 到 {d}','{s} → {d}','{s} से {d}'],
+ ['{n} pin','{n} pin','{n} Pin','{n} 个插针','ピン {n}','{n} पिन'],
+ ['{n} pins','{n} pins','{n} Pins','{n} 个插针','ピン {n}','{n} पिन'],
+ ['<b>{s} → {d}</b> desconectado.','<b>{s} → {d}</b> disconnected.','<b>{s} → {d}</b> getrennt.','<b>{s} → {d}</b> 已断开。','<b>{s} → {d}</b> 切断。','<b>{s} → {d}</b> डिस्कनेक्ट।'],
+ ['<b>{s} → {d}</b> / clavija {p}.','<b>{s} → {d}</b> / {p} pin.','<b>{s} → {d}</b> / Stecker {p}.','<b>{s} → {d}</b> / {p}插针。','<b>{s} → {d}</b> / {p}のピン。','<b>{s} → {d}</b> / {p} पिन।'],
+ ['Con la clavija amarilla el efecto va al revés.','With the yellow pin the effect is reversed.','Mit dem gelben Stecker wirkt der Effekt umgekehrt.','用黄色插针时效果反向。','イエローのピンでは効果が逆になります。','पीली पिन से असर उलटा होता है।'],
+ ['Se escucha directo en la salida.','You hear it directly at the output.','Ist direkt am Ausgang zu hören.','直接在输出端听到。','出力から直接聞こえます。','आउटपुट पर सीधे सुनाई देता है।'],
+ ['Es una señal de control: en la salida casi no se oye, salvo un LFO rápido o el ruido de un S&H.','It’s a control signal: barely audible at the output, except for a fast LFO or the noise of an S&H.','Das ist ein Steuersignal: am Ausgang kaum hörbar, außer ein schneller LFO oder das Rauschen eines S&H.','这是控制信号：在输出端几乎听不到，除非是快速 LFO 或 S&H 的噪声。','これはコントロール信号です。速いLFOやS&Hのノイズ以外、出力ではほとんど聞こえません。','यह कंट्रोल सिग्नल है: आउटपुट पर लगभग सुनाई नहीं देता, सिवाय तेज़ LFO या S&H के शोर के।'],
+ ['La señal {d}.','The signal {d}.','Das Signal {d}.','信号{d}。','信号は{d}。','सिग्नल {d}।'],
+ ['Esta señal {d}.','This signal {d}.','Dieses Signal {d}.','这个信号{d}。','この信号は{d}。','यह सिग्नल {d}।'],
+ ['Al ser control, solo se oye si es rápida (LFO a más de 20 Hz) o como clicks.','Being a control signal, it’s only heard if it’s fast (LFO above 20 Hz) or as clicks.','Als Steuersignal hört man es nur, wenn es schnell ist (LFO über 20 Hz), oder als Klicks.','作为控制信号，只有足够快（LFO 高于 20 Hz）或以咔嗒声的形式才能听到。','コントロール信号なので、速い場合（20 Hz以上のLFO）かクリック音としてしか聞こえません。','कंट्रोल सिग्नल होने के कारण यह तभी सुनाई देता है जब तेज़ हो (20 Hz से ऊपर LFO) या क्लिक के रूप में।'],
+ ['Modulación de frecuencia exponencial a velocidad de audio: timbres metálicos e inarmónicos.','Exponential frequency modulation at audio rate: metallic, inharmonic timbres.','Exponentielle Frequenzmodulation mit Audiorate: metallische, unharmonische Klangfarben.','音频速率的指数调频：金属感、非谐波的音色。','オーディオレートでの指数FM：金属的で非整数次倍音の音色。','ऑडियो रेट पर एक्सपोनेंशियल फ़्रीक्वेंसी मॉड्यूलेशन: धात्विक और इनहार्मोनिक टिम्बर।'],
+ ['El teclado afina el oscilador. Usá clavija magenta para que quede afinado.','The keyboard tunes the oscillator. Use a magenta pin to keep it in tune.','Die Tastatur stimmt den Oszillator. Nimm einen Magenta-Stecker, damit er sauber gestimmt ist.','键盘控制振荡器音高。用品红插针才能保持音准。','鍵盤がオシレーターの音程を決めます。正しい音程にはマゼンタのピンを使って。','कीबोर्ड ऑसिलेटर का सुर तय करता है। सुर में रखने के लिए मैजेंटा पिन लगाएँ।'],
+ ['Mueve la afinación: vibrato, sirenas o saltos de tono. Magenta = una octava por unidad.','Moves the pitch: vibrato, sirens or pitch jumps. Magenta = one octave per unit.','Verändert die Tonhöhe: Vibrato, Sirenen oder Tonsprünge. Magenta = eine Oktave pro Einheit.','改变音高：颤音、警笛声或音高跳变。品红 = 每单位一个八度。','ピッチを動かします：ビブラート、サイレン、音程ジャンプ。マゼンタ＝1単位で1オクターブ。','पिच बदलता है: वाइब्रेटो, सायरन या सुर की छलाँग। मैजेंटा = एक यूनिट में एक ऑक्टेव।'],
+ ['FM lineal: suma Hz directamente a la frecuencia. Con audio da campanas y metales que siguen el tono.','Linear FM: adds Hz straight to the frequency. With audio it gives bells and metals that track the pitch.','Lineare FM: addiert Hz direkt zur Frequenz. Mit Audio entstehen Glocken und Metallklänge, die der Tonhöhe folgen.','线性 FM：直接把 Hz 加到频率上。用音频调制可得到随音高变化的钟声和金属音。','リニアFM：周波数に直接Hzを加えます。オーディオで変調すると音程に追従するベルや金属音になります。','लीनियर FM: फ़्रीक्वेंसी में सीधे Hz जोड़ता है। ऑडियो से सुर के साथ चलने वाली घंटियाँ और धात्विक ध्वनियाँ मिलती हैं।'],
+ ['A velocidad de audio, {d} tan rápido que aparecen bandas laterales y aspereza.','At audio rate it {d} so fast that sidebands and roughness appear.','Mit Audiorate: Das Signal {d}, so schnell, dass Seitenbänder und Rauheit entstehen.','在音频速率下，信号{d}，快到产生边带和粗糙感。','オーディオレートで変調：信号は{d}。その速さでサイドバンドとざらつきが生まれます。','ऑडियो रेट पर: सिग्नल {d} — इतनी तेज़ी से कि साइडबैंड और खुरदुरापन आ जाता है।'],
+ ['Cerrar controles','Close controls','Regler schließen','关闭控制','コントロールを閉じる','कंट्रोल बंद करें'],
+ ['Controles de {t}','{t} controls','Regler: {t}','{t} 控制','{t} のコントロール','{t} कंट्रोल'],
+ ['Abrir controles de {t}','Open {t} controls','Regler öffnen: {t}','打开 {t} 控制','{t} のコントロールを開く','{t} कंट्रोल खोलें'],
+ ['Con el arpegio activo, el gate lo maneja el arpegio','With the arpeggio on, the arpeggio drives the gate','Bei aktivem Arpeggio steuert das Arpeggio das Gate','琶音开启时，门信号由琶音控制','アルペジオ動作中はゲートをアルペジオが制御します','आर्पेजियो चालू होने पर गेट आर्पेजियो चलाता है'],
+ [' / editado',' / edited',' / bearbeitet',' / 已编辑',' / 編集済み',' / संपादित'],
+ ['<b>{n}</b> cargado. {tip}','<b>{n}</b> loaded. {tip}','<b>{n}</b> geladen. {tip}','已加载 <b>{n}</b>。{tip}','<b>{n}</b> を読み込みました。{tip}','<b>{n}</b> लोड हुआ। {tip}'],
+ ['<b>Patch al azar.</b> Si no suena, activá el arpegio o el gate fijo, o sumá un oscilador a Salida L+R.','<b>Random patch.</b> If it’s silent, turn on the arpeggio or hold gate, or add an oscillator to Output L+R.','<b>Zufalls-Patch.</b> Wenn nichts klingt, schalte Arpeggio oder Gate halten ein, oder verbinde einen Oszillator mit Ausgang L+R.','<b>随机音色。</b>如果没有声音，打开琶音或门信号常开，或把一个振荡器连到输出 L+R。','<b>ランダム・パッチ。</b>鳴らない場合は、アルペジオかゲート固定をオンにするか、オシレーターを出力 L+R につないでください。','<b>रैंडम पैच।</b> अगर आवाज़ न आए तो आर्पेजियो या गेट होल्ड चालू करें, या किसी ऑसिलेटर को आउटपुट L+R से जोड़ें।'],
+ ['Este navegador no permite guardar. Usá el código o el archivo.','This browser doesn’t allow saving. Use the code or the file.','Dieser Browser erlaubt kein Speichern. Nutze den Code oder die Datei.','此浏览器不允许保存。请使用代码或文件。','このブラウザでは保存できません。コードかファイルを使ってください。','यह ब्राउज़र सहेजने नहीं देता। कोड या फ़ाइल इस्तेमाल करें।'],
+ ['Cargado: {n}','Loaded: {n}','Geladen: {n}','已加载：{n}','読み込み：{n}','लोड हुआ: {n}'],
+ ['{n} guardado','{n} saved','{n} gespeichert','已保存 {n} 个','{n} 件保存','{n} सहेजा गया'],
+ ['{n} guardados','{n} saved','{n} gespeichert','已保存 {n} 个','{n} 件保存','{n} सहेजे गए'],
+ ['Todavía no guardaste patches. Escribí un nombre arriba y tocá Guardar.','You haven’t saved any patches yet. Type a name above and tap Save.','Du hast noch keine Patches gespeichert. Gib oben einen Namen ein und tippe auf Speichern.','你还没有保存任何音色。在上方输入名称，然后点击保存。','まだパッチを保存していません。上に名前を入力して「保存」をタップしてください。','आपने अभी तक कोई पैच नहीं सहेजा। ऊपर नाम लिखें और सहेजें दबाएँ।'],
+ ['Cargar','Load','Laden','加载','読込','लोड करें'],
+ ['Borrar','Delete','Löschen','删除','削除','हटाएँ'],
+ ['¿Seguro?','Sure?','Sicher?','确定？','本当に？','पक्का?'],
+ ['Patch borrado','Patch deleted','Patch gelöscht','音色已删除','パッチを削除しました','पैच हटाया गया'],
+ ['<b>{n}</b> cargado desde tu biblioteca.','<b>{n}</b> loaded from your library.','<b>{n}</b> aus deiner Bibliothek geladen.','已从你的音色库加载 <b>{n}</b>。','ライブラリから <b>{n}</b> を読み込みました。','<b>{n}</b> आपकी लाइब्रेरी से लोड हुआ।'],
+ ['Este patch está dañado','This patch is damaged','Dieser Patch ist beschädigt','此音色已损坏','このパッチは壊れています','यह पैच खराब है'],
+ ['Escribí un nombre para el patch','Type a name for the patch','Gib einen Namen für den Patch ein','请输入音色名称','パッチ名を入力してください','पैच का नाम लिखें'],
+ ['Actualizado: {n}','Updated: {n}','Aktualisiert: {n}','已更新：{n}','更新：{n}','अपडेट हुआ: {n}'],
+ ['Guardado: {n}','Saved: {n}','Gespeichert: {n}','已保存：{n}','保存：{n}','सहेजा गया: {n}'],
+ ['{n} patches importados','{n} patches imported','{n} Patches importiert','已导入 {n} 个音色','{n} 件のパッチをインポート','{n} पैच आयात हुए'],
+ ['Código copiado','Code copied','Code kopiert','代码已复制','コードをコピーしました','कोड कॉपी हुआ'],
+ ['Seleccioná el texto y copialo','Select the text and copy it','Markiere den Text und kopiere ihn','请选中文本并复制','テキストを選択してコピーしてください','टेक्स्ट चुनें और कॉपी करें'],
+ ['El código no es un patch válido','The code is not a valid patch','Der Code ist kein gültiger Patch','该代码不是有效的音色','このコードは有効なパッチではありません','यह कोड मान्य पैच नहीं है'],
+ ['Archivo descargado','File downloaded','Datei heruntergeladen','文件已下载','ファイルをダウンロードしました','फ़ाइल डाउनलोड हुई'],
+ ['Esperá un momento y probá de nuevo','Wait a moment and try again','Warte kurz und versuch es noch einmal','请稍候再试','少し待ってからもう一度お試しください','थोड़ा रुककर फिर कोशिश करें'],
+ ['No se pudo descargar. Usá “Copiar código”.','Couldn’t download. Use “Copy code”.','Download fehlgeschlagen. Nutze „Code kopieren“.','无法下载。请使用“复制代码”。','ダウンロードできませんでした。「コードをコピー」を使ってください。','डाउनलोड नहीं हो सका। “कोड कॉपी करें” इस्तेमाल करें।'],
+ ['La biblioteca está vacía','The library is empty','Die Bibliothek ist leer','音色库为空','ライブラリは空です','लाइब्रेरी खाली है'],
+ ['El archivo no es un patch válido','The file is not a valid patch','Die Datei ist kein gültiger Patch','该文件不是有效的音色','このファイルは有効なパッチではありません','यह फ़ाइल मान्य पैच नहीं है'],
+ ['Tocá un punto de la matriz para poner o sacar una clavija. Encendé el audio con el botón magenta de arriba.','Tap a point in the matrix to insert or remove a pin. Turn the audio on with the magenta button at the top.','Tippe auf einen Punkt der Matrix, um einen Stecker zu setzen oder zu entfernen. Schalte das Audio mit dem Magenta-Knopf oben ein.','点击矩阵中的一个点来插入或拔出插针。用上方的品红按钮开启音频。','マトリクスの点をタップしてピンを挿す／抜く。上のマゼンタのボタンでオーディオをオンに。','पिन लगाने या हटाने के लिए मैट्रिक्स के किसी बिंदु को छुएँ। ऊपर के मैजेंटा बटन से ऑडियो चालू करें।']
+];
+let L=(new URLSearchParams(location.search).get('lang')||'').toLowerCase();
+if(LANGS[L]){try{localStorage.setItem(LANGK,L);}catch(e){}}
+else{try{L=localStorage.getItem(LANGK)||'';}catch(e){L='';}}
+if(!LANGS[L])L='es';
+const TR={};{const col=Object.keys(LANGS).indexOf(L);if(col>0)TXT.forEach(r=>TR[r[0]]=r[col]);}
+const tr=(s,v)=>{let r=TR[s]||s;if(v)r=r.replace(/\{(\w+)\}/g,(m,k)=>k in v?v[k]:m);return r;};
+document.documentElement.lang=L;
+if(L!=='es'){
+ document.title=tr(document.title);
+ const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;
+ while((n=w.nextNode())){const s=n.nodeValue.trim();if(s&&TR[s]&&!n.parentNode.closest('script,svg'))n.nodeValue=n.nodeValue.replace(s,()=>TR[s]);}
+ document.querySelectorAll('[aria-label],[placeholder],[title]').forEach(el=>['aria-label','placeholder','title'].forEach(a=>{const v=el.getAttribute(a);if(v&&TR[v])el.setAttribute(a,TR[v]);}));
+}
+{const sel=document.getElementById('lang');
+ Object.entries(LANGS).forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;sel.appendChild(o);});
+ sel.value=L;
+ sel.onchange=()=>{try{localStorage.setItem(LANGK,sel.value);}catch(e){}const u=new URL(location.href);u.searchParams.set('lang',sel.value);location.href=u.href;};}
 
 /* ================== definiciones ================== */
 const PINS={g:{n:'Cian',v:0.1},w:{n:'Blanca',v:0.35},r:{n:'Magenta',v:1},b:{n:'Amarilla',v:-0.35}};
@@ -523,7 +811,7 @@ function initAudio(){
 function ensure(){
  if(!ctx)initAudio();
  if(ctx.state!=='running')ctx.resume();
- led.classList.add('on');bPower.classList.remove('go');bPower.setAttribute('aria-label','Audio encendido');
+ led.classList.add('on');bPower.classList.remove('go');bPower.setAttribute('aria-label',tr('Audio encendido'));
 }
 
 function applyPin(k){
@@ -624,24 +912,24 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clear
 const pal=$('pal');
 Object.entries(PINS).forEach(([k,p])=>{
  const b=document.createElement('button');b.className='pb';b.dataset.k=k;
- b.innerHTML=`<i style="background:${PINCOL[k]}"></i>${p.n} ${k==='b'?'−35 %':Math.round(p.v*100)+' %'}`;
+ b.innerHTML=`<i style="background:${PINCOL[k]}"></i>${tr(p.n)} ${k==='b'?'−35 %':Math.round(p.v*100)+' %'}`;
  b.setAttribute('aria-pressed',k===brush);
  b.onclick=()=>{brush=k;pal.querySelectorAll('.pb').forEach(x=>x.setAttribute('aria-pressed',x.dataset.k===k));};
  pal.appendChild(b);
 });
 $('bRand').onclick=()=>{ensure();randomPatch();};
-$('bClear').onclick=()=>{clearAll();renderPins();setName('Sin título');save();setInfo('Matriz vacía. Empezá por una fuente de audio hacia <b>Salida L+R</b>.');};
+$('bClear').onclick=()=>{clearAll();renderPins();setName('Sin título');save();setInfo(tr('Matriz vacía. Empezá por una fuente de audio hacia <b>Salida L+R</b>.'));};
 
 /* ================== matriz ================== */
 const M=$('matrix');
 M.style.gridTemplateColumns=`var(--lab) repeat(${DST.length}, var(--cell))`;
 (function build(){
- let h='<div class="corner"><span><b>X</b> destinos →</span><span><b>Y</b> fuentes ↓</span></div>';
- DST.forEach((d,i)=>h+=`<div class="ch g-${d.g}" data-ci="${i}"><span>${d.n}</span></div>`);
+ let h=`<div class="corner"><span><b>X</b> ${tr('destinos →')}</span><span><b>Y</b> ${tr('fuentes ↓')}</span></div>`;
+ DST.forEach((d,i)=>h+=`<div class="ch g-${d.g}" data-ci="${i}"><span>${tr(d.n)}</span></div>`);
  SRC.forEach((s,r)=>{
    const rs=r>0&&SRC[r-1].g!==s.g;
-   h+=`<div class="rh g-${s.g}${rs?' rs':''}" data-ri="${r}">${s.n}</div>`;
-   DST.forEach((d,c)=>{const gs=c>0&&DST[c-1].g!==d.g;h+=`<button class="x${gs?' gs':''}${rs?' rs':''}" data-r="${r}" data-c="${c}" aria-label="${s.n} hacia ${d.n}"></button>`;});
+   h+=`<div class="rh g-${s.g}${rs?' rs':''}" data-ri="${r}">${tr(s.n)}</div>`;
+   DST.forEach((d,c)=>{const gs=c>0&&DST[c-1].g!==d.g;h+=`<button class="x${gs?' gs':''}${rs?' rs':''}" data-r="${r}" data-c="${c}" aria-label="${tr('{s} hacia {d}',{s:tr(s.n),d:tr(d.n)})}"></button>`;});
  });
  M.innerHTML=h;
 })();
@@ -668,21 +956,23 @@ M.addEventListener('click',e=>{
 });
 function paint(k){const [s,d]=k.split('>');const x=cellAt(SI[s],DI[d]);if(!x)return;x.classList.remove('p-g','p-w','p-r','p-b');if(pins[k])x.classList.add('p-'+pins[k]);}
 function renderPins(){cells.forEach(x=>x.classList.remove('p-g','p-w','p-r','p-b'));Object.keys(pins).forEach(paint);count();}
-function count(){const n=Object.keys(pins).length;$('count').textContent=n+(n===1?' pin':' pins');}
+function count(){const n=Object.keys(pins).length;$('count').textContent=tr(n===1?'{n} pin':'{n} pins',{n});}
 
 const info=$('info');
 function setInfo(h){info.innerHTML=h;}
 function describe(s,d,t){
- if(!t){setInfo(`<b>${s.n} → ${d.n}</b> desconectado.`);return;}
+ const sd={s:tr(s.n),d:tr(d.n)},dd={d:tr(d.d||'')};
+ if(!t){setInfo(tr('<b>{s} → {d}</b> desconectado.',sd));return;}
  let txt;
- const inv=t==='b'?' Con la clavija amarilla el efecto va al revés.':'';
- if(d.t==='out') txt=s.k==='audio'?'Se escucha directo en la salida.':'Es una señal de control: en la salida casi no se oye, salvo un LFO rápido o el ruido de un S&H.';
- else if(d.t==='audio') txt='La señal '+d.d+'.'+(s.k==='cv'?' Al ser control, solo se oye si es rápida (LFO a más de 20 Hz) o como clicks.':'');
- else if(d.t==='pitch') txt=s.k==='audio'?'Modulación de frecuencia exponencial a velocidad de audio: timbres metálicos e inarmónicos.':(s.id==='kbd'?'El teclado afina el oscilador. Usá clavija magenta para que quede afinado.':'Mueve la afinación: vibrato, sirenas o saltos de tono. Magenta = una octava por unidad.');
- else if(d.t==='fm') txt='FM lineal: suma Hz directamente a la frecuencia. Con audio da campanas y metales que siguen el tono.';
- else if(d.t==='sh') txt='Esta señal '+d.d+'.';
- else txt=(s.k==='audio'?'A velocidad de audio, '+d.d+' tan rápido que aparecen bandas laterales y aspereza.':'La señal '+d.d+'.');
- setInfo(`<b>${s.n} → ${d.n}</b> / clavija ${PINS[t].n.toLowerCase()}. ${txt}${inv}`);
+ const inv=t==='b'?' '+tr('Con la clavija amarilla el efecto va al revés.'):'';
+ if(d.t==='out') txt=tr(s.k==='audio'?'Se escucha directo en la salida.':'Es una señal de control: en la salida casi no se oye, salvo un LFO rápido o el ruido de un S&H.');
+ else if(d.t==='audio') txt=tr('La señal {d}.',dd)+(s.k==='cv'?' '+tr('Al ser control, solo se oye si es rápida (LFO a más de 20 Hz) o como clicks.'):'');
+ else if(d.t==='pitch') txt=tr(s.k==='audio'?'Modulación de frecuencia exponencial a velocidad de audio: timbres metálicos e inarmónicos.':(s.id==='kbd'?'El teclado afina el oscilador. Usá clavija magenta para que quede afinado.':'Mueve la afinación: vibrato, sirenas o saltos de tono. Magenta = una octava por unidad.'));
+ else if(d.t==='fm') txt=tr('FM lineal: suma Hz directamente a la frecuencia. Con audio da campanas y metales que siguen el tono.');
+ else if(d.t==='sh') txt=tr('Esta señal {d}.',dd);
+ else txt=tr(s.k==='audio'?'A velocidad de audio, {d} tan rápido que aparecen bandas laterales y aspereza.':'La señal {d}.',dd);
+ const pn=tr(PINS[t].n);
+ setInfo(tr('<b>{s} → {d}</b> / clavija {p}.',{...sd,p:L==='de'?pn:pn.toLowerCase()})+' '+txt+inv);
 }
 
 /* ================== controles ================== */
@@ -723,24 +1013,24 @@ function makeCtl(c,parent,dup){
  const u=UI[c.id]||(UI[c.id]={c,views:[]});
  const l=document.createElement(c.sel?'div':'label');l.className='ctl';
  if(c.sel){
-   const nmOf=o=>(c.names&&c.names[o])||WN[o]||o;
+   const nmOf=o=>tr((c.names&&c.names[o])||WN[o]||o);
    if(c.id==='aSc'||c.id==='aTo')l.classList.add('wide');
    else if(c.id==='aMo'||c.id==='aDi')l.classList.add('span2');
-   l.innerHTML=`<span class="t">${c.l} <b>${nmOf(v0)}</b></span>`;
+   l.innerHTML=`<span class="t">${tr(c.l)} <b>${nmOf(v0)}</b></span>`;
    const b=l.querySelector('b');
    const g=document.createElement('div');g.className='seg'+(c.id==='aTo'?' keys':c.id==='aSc'?' scales':'');
-   g.setAttribute('role','group');g.setAttribute('aria-label',c.l);
+   g.setAttribute('role','group');g.setAttribute('aria-label',tr(c.l));
    const view={set:v=>{g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));b.textContent=nmOf(v);}};
    c.sel.forEach(o=>{const bt=document.createElement('button');bt.type='button';bt.dataset.v=o;
      if(c.id==='aTo'&&NN[+o].includes('#'))bt.className='sh';
-     bt.innerHTML=optHTML(c,o,nmOf(o));bt.title=nmOf(o);bt.setAttribute('aria-label',c.l+': '+nmOf(o));
+     bt.innerHTML=optHTML(c,o,nmOf(o));bt.title=nmOf(o);bt.setAttribute('aria-label',tr(c.l)+': '+nmOf(o));
      bt.onclick=()=>{P[c.id]=o;refresh(c.id);if(ctx&&c.f)c.f(o);changed();viz();};
      g.appendChild(bt);});
    view.set(v0);
    l.appendChild(g);u.views.push(view);
  }else{
-   l.innerHTML=`<span class="t">${c.l} <b>${fmt(c,v0)}</b></span>`;
-   const r=document.createElement('input');r.type='range';r.min=0;r.max=1000;r.step=1;r.setAttribute('aria-label',c.l);
+   l.innerHTML=`<span class="t">${tr(c.l)} <b>${fmt(c,v0)}</b></span>`;
+   const r=document.createElement('input');r.type='range';r.min=0;r.max=1000;r.step=1;r.setAttribute('aria-label',tr(c.l));
    const b=l.querySelector('b');
    const view={set:v=>{r.value=toS(c,v);r.style.setProperty('--p',r.value/10+'%');b.textContent=fmt(c,v);}};
    view.set(v0);
@@ -797,7 +1087,7 @@ function viz(){if(vzPending)return;vzPending=true;requestAnimationFrame(()=>{vzP
 
 function buildCard(cd,dup){
  const card=document.createElement('div');card.className='blk g-'+cd.g;
- card.innerHTML=`<div class="tag"><b>${cd.t}</b><i>${GL[cd.g]}</i></div>`;
+ card.innerHTML=`<div class="tag"><b>${tr(cd.t)}</b><i>${tr(GL[cd.g])}</i></div>`;
  const inn=document.createElement('div');inn.className='in';
  if(VZ[cd.t]){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('class','viz');s.setAttribute('viewBox',`0 0 ${VW} ${VH}`);s.setAttribute('preserveAspectRatio','none');s.setAttribute('aria-hidden','true');inn.appendChild(s);VZEL.push({el:s,fn:VZ[cd.t]});}
  cd.c.forEach(c=>makeCtl(c,inn,dup));
@@ -822,9 +1112,9 @@ function openPop(r){
  if(popRow===r){closePop();return;}
  closePop();
  if(!popCards[t]){const card=buildCard(CARDS.find(cd=>cd.t===t),true);
-   const x=document.createElement('button');x.type='button';x.className='px';x.setAttribute('aria-label','Cerrar controles');x.textContent='×';x.onclick=closePop;
+   const x=document.createElement('button');x.type='button';x.className='px';x.setAttribute('aria-label',tr('Cerrar controles'));x.textContent='×';x.onclick=closePop;
    card.querySelector('.tag').appendChild(x);popCards[t]=card;}
- pop.replaceChildren(popCards[t]);pop.setAttribute('aria-label','Controles de '+t);pop.hidden=false;
+ pop.replaceChildren(popCards[t]);pop.setAttribute('aria-label',tr('Controles de {t}',{t:tr(t)}));pop.hidden=false;
  popRow=r;RH[r].classList.add('open');RH[r].setAttribute('aria-expanded','true');
  placePop();viz();
  const pr=pop.getBoundingClientRect();if(pr.bottom>innerHeight||pr.top<0)pop.scrollIntoView({block:'nearest'});
@@ -838,7 +1128,7 @@ function placePop(){
  pop.style.left=left+'px';pop.style.top=(h.bottom-app.top+4)+'px';
 }
 RH.forEach((h,r)=>{if(!SRCCARD[SRC[r].id])return;
- h.classList.add('has');h.tabIndex=0;h.setAttribute('role','button');h.setAttribute('aria-expanded','false');h.title='Abrir controles de '+SRCCARD[SRC[r].id];
+ h.classList.add('has');h.tabIndex=0;h.setAttribute('role','button');h.setAttribute('aria-expanded','false');h.title=tr('Abrir controles de {t}',{t:tr(SRCCARD[SRC[r].id])});
  h.addEventListener('click',()=>openPop(r));
  h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPop(r);}});});
 document.addEventListener('pointerdown',e=>{if(popRow>=0&&!pop.contains(e.target)&&!e.target.closest('.rh.has'))closePop();});
@@ -878,7 +1168,7 @@ kb.addEventListener('pointerup',up);kb.addEventListener('pointercancel',up);kb.a
 $('octDn').onclick=()=>{if(oct>-2){oct--;buildKb();}};
 $('octUp').onclick=()=>{if(oct<2){oct++;buildKb();}};
 let hold=false;const holdBtn=$('hold');
-holdBtn.onclick=()=>{ensure();if(arpOn){toast('Con el arpegio activo, el gate lo maneja el arpegio');return;}hold=!hold;holdBtn.setAttribute('aria-pressed',hold);if(hold)gateOpen();else if(!held.length)gateClose();};
+holdBtn.onclick=()=>{ensure();if(arpOn){toast(tr('Con el arpegio activo, el gate lo maneja el arpegio'));return;}hold=!hold;holdBtn.setAttribute('aria-pressed',hold);if(hold)gateOpen();else if(!held.length)gateClose();};
 const KM={a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15,'ñ':16,';':16};
 const down=new Map();
 const typing=()=>/INPUT|SELECT|TEXTAREA/.test(document.activeElement&&document.activeElement.tagName)||!$('modal').hidden;
@@ -919,7 +1209,7 @@ draw();
 
 /* ================== patches: estado, presets, azar ================== */
 let curName='Básico',edited=false;
-function setName(n,ed){curName=n;edited=!!ed;$('pname').textContent=n+(edited?' / editado':'');}
+function setName(n,ed){curName=n;edited=!!ed;$('pname').textContent=tr(n)+(edited?tr(' / editado'):'');}
 function changed(){if(!edited)setName(curName,true);save();}
 function snapshot(){return {pins:{...pins},P:{...P},arp:{on:arpOn,latch}};}
 function validKey(k){const [s,d]=String(k).split('>');return s in SI&&d in DI;}
@@ -939,7 +1229,7 @@ function loadPreset(n){
  d.P.mv=P.mv;Object.assign(d.P,p.v||{});
  p.p.split(' ').forEach(e=>{const [k,t]=e.split(':');d.pins[k]=t;});
  restore(d,n);
- setInfo(`<b>${n}</b> cargado. ${p.tip}`);
+ setInfo(tr('<b>{n}</b> cargado. {tip}',{n:tr(n),tip:tr(p.tip)}));
 }
 function randomPatch(){
  clearAll();
@@ -950,13 +1240,13 @@ function randomPatch(){
  pins[aud[Math.floor(Math.random()*aud.length)].id+'>outLR']='w';
  pins[aud[Math.floor(Math.random()*5)].id+'>'+['f1in','f2in','foldin','dlyin'][Math.floor(Math.random()*4)]]='w';
  Object.keys(pins).forEach(applyPin);renderPins();setName('Azar',false);save();
- setInfo('<b>Patch al azar.</b> Si no suena, activá el arpegio o el gate fijo, o sumá un oscilador a Salida L+R.');
+ setInfo(tr('<b>Patch al azar.</b> Si no suena, activá el arpegio o el gate fijo, o sumá un oscilador a Salida L+R.'));
 }
 
 /* ================== biblioteca ================== */
 const LIBK='umamp-lib-v1',CURK='umamp-cur-v2';
 function libGet(){try{const l=JSON.parse(localStorage.getItem(LIBK)||'[]');return Array.isArray(l)?l:[];}catch(e){return [];}}
-function libSet(l){try{localStorage.setItem(LIBK,JSON.stringify(l));return true;}catch(e){toast('Este navegador no permite guardar. Usá el código o el archivo.');return false;}}
+function libSet(l){try{localStorage.setItem(LIBK,JSON.stringify(l));return true;}catch(e){toast(tr('Este navegador no permite guardar. Usá el código o el archivo.'));return false;}}
 function save(){try{localStorage.setItem(CURK,JSON.stringify({name:curName,edited,data:snapshot()}));}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const modal=$('modal');
@@ -971,17 +1261,17 @@ modal.addEventListener('click',e=>{if(e.target===modal)closeLib();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeLib();});
 function renderLib(){
  const pg=$('presetGrid');pg.innerHTML='';
- Object.keys(PRESETS).forEach(n=>{const b=document.createElement('button');b.textContent=n;b.title=PRESETS[n].tip;b.onclick=()=>{ensure();loadPreset(n);closeLib();toast('Cargado: '+n);};pg.appendChild(b);});
+ Object.keys(PRESETS).forEach(n=>{const b=document.createElement('button');b.textContent=tr(n);b.title=tr(PRESETS[n].tip);b.onclick=()=>{ensure();loadPreset(n);closeLib();toast(tr('Cargado: {n}',{n:tr(n)}));};pg.appendChild(b);});
  const lib=libGet(),ul=$('userList');ul.innerHTML='';
- $('libCount').textContent=lib.length?lib.length+(lib.length===1?' guardado':' guardados'):'';
- if(!lib.length){ul.innerHTML='<div class="empty">Todavía no guardaste patches. Escribí un nombre arriba y tocá Guardar.</div>';return;}
+ $('libCount').textContent=lib.length?tr(lib.length===1?'{n} guardado':'{n} guardados',{n:lib.length}):'';
+ if(!lib.length){ul.innerHTML='<div class="empty">'+tr('Todavía no guardaste patches. Escribí un nombre arriba y tocá Guardar.')+'</div>';return;}
  lib.forEach((it,i)=>{
    const r=document.createElement('div');r.className='row';
-   const dt=it.date?new Date(it.date).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+   const dt=it.date?new Date(it.date).toLocaleDateString(LOC[L],{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
    r.innerHTML=`<span class="name">${esc(it.name)}</span><span class="date">${dt}</span>`;
-   const bl=document.createElement('button');bl.textContent='Cargar';bl.onclick=()=>{try{ensure();restore(it.data,it.name);closeLib();toast('Cargado: '+it.name);setInfo(`<b>${esc(it.name)}</b> cargado desde tu biblioteca.`);}catch(e){toast('Este patch está dañado');}};
-   const bd=document.createElement('button');bd.textContent='Borrar';
-   bd.onclick=()=>{if(bd.dataset.c!=='1'){bd.dataset.c='1';bd.textContent='¿Seguro?';setTimeout(()=>{bd.dataset.c='';bd.textContent='Borrar';},2500);return;}const l=libGet();l.splice(i,1);libSet(l);renderLib();toast('Patch borrado');};
+   const bl=document.createElement('button');bl.textContent=tr('Cargar');bl.onclick=()=>{try{ensure();restore(it.data,it.name);closeLib();toast(tr('Cargado: {n}',{n:it.name}));setInfo(tr('<b>{n}</b> cargado desde tu biblioteca.',{n:esc(it.name)}));}catch(e){toast(tr('Este patch está dañado'));}};
+   const bd=document.createElement('button');bd.textContent=tr('Borrar');
+   bd.onclick=()=>{if(bd.dataset.c!=='1'){bd.dataset.c='1';bd.textContent=tr('¿Seguro?');setTimeout(()=>{bd.dataset.c='';bd.textContent=tr('Borrar');},2500);return;}const l=libGet();l.splice(i,1);libSet(l);renderLib();toast(tr('Patch borrado'));};
    r.appendChild(bl);r.appendChild(bd);ul.appendChild(r);
  });
 }
@@ -993,33 +1283,33 @@ function saveToLib(name,data){
 }
 $('bSave').onclick=()=>{
  const name=$('saveName').value.trim();
- if(!name){toast('Escribí un nombre para el patch');$('saveName').focus();return;}
+ if(!name){toast(tr('Escribí un nombre para el patch'));$('saveName').focus();return;}
  const r=saveToLib(name,snapshot());if(!r)return;
  setName(name,false);save();renderLib();$('code').value=JSON.stringify(filePatch(),null,1);
- toast(r==='replaced'?'Actualizado: '+name:'Guardado: '+name);
+ toast(tr(r==='replaced'?'Actualizado: {n}':'Guardado: {n}',{n:name}));
 };
 $('saveName').addEventListener('keydown',e=>{if(e.key==='Enter')$('bSave').click();});
 function filePatch(){return {app:'U-MA matriz de patcheo',type:'patch',version:2,name:curName,data:snapshot()};}
 function importObj(o){
  if(o&&o.type==='library'&&Array.isArray(o.patches)){
    let n=0;o.patches.forEach(p=>{if(p&&p.name&&p.data&&typeof p.data.pins==='object'){saveToLib(String(p.name).slice(0,40),p.data);n++;}});
-   renderLib();toast(n+' patches importados');return;
+   renderLib();toast(tr('{n} patches importados',{n}));return;
  }
  const data=o&&o.data?o.data:o;const name=(o&&o.name)||'Importado';
- ensure();restore(data,String(name).slice(0,40));saveToLib(curName,snapshot());renderLib();toast('Cargado: '+curName);
+ ensure();restore(data,String(name).slice(0,40));saveToLib(curName,snapshot());renderLib();toast(tr('Cargado: {n}',{n:tr(curName)}));
 }
 $('bCopy').onclick=()=>{const ta=$('code');ta.value=JSON.stringify(filePatch(),null,1);
- const ok=()=>toast('Código copiado');
- if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.select();try{document.execCommand('copy');ok();}catch(e){toast('Seleccioná el texto y copialo');}});
- else{ta.select();try{document.execCommand('copy');ok();}catch(e){toast('Seleccioná el texto y copialo');}}};
-$('bPaste').onclick=()=>{try{importObj(JSON.parse($('code').value));}catch(e){toast('El código no es un patch válido');}};
+ const ok=()=>toast(tr('Código copiado'));
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.select();try{document.execCommand('copy');ok();}catch(e){toast(tr('Seleccioná el texto y copialo'));}});
+ else{ta.select();try{document.execCommand('copy');ok();}catch(e){toast(tr('Seleccioná el texto y copialo'));}}};
+$('bPaste').onclick=()=>{try{importObj(JSON.parse($('code').value));}catch(e){toast(tr('El código no es un patch válido'));}};
 /* dentro del visor de artefactos la descarga pasa por el permiso "downloads"; afuera, enlace normal */
 const dlCap=window.claude&&typeof window.claude.use==='function'?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);
 async function download(obj,fname){
  const dl=await dlCap;
  if(dl){
-   try{await dl.save({filename:fname,data:JSON.stringify(obj,null,1)});toast('Archivo descargado');}
-   catch(e){const c=e&&e.code;if(c==='declined')return;toast(c==='rate_limited'?'Esperá un momento y probá de nuevo':'No se pudo descargar. Usá “Copiar código”.');}
+   try{await dl.save({filename:fname,data:JSON.stringify(obj,null,1)});toast(tr('Archivo descargado'));}
+   catch(e){const c=e&&e.code;if(c==='declined')return;toast(tr(c==='rate_limited'?'Esperá un momento y probá de nuevo':'No se pudo descargar. Usá “Copiar código”.'));}
    return;
  }
  const blob=new Blob([JSON.stringify(obj,null,1)],{type:'application/json'});
@@ -1028,9 +1318,9 @@ async function download(obj,fname){
 }
 const slug=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'patch';
 $('bExpCur').onclick=()=>download(filePatch(),'u-ma-'+slug(curName)+'.json');
-$('bExpLib').onclick=()=>{const l=libGet();if(!l.length){toast('La biblioteca está vacía');return;}download({app:'U-MA matriz de patcheo',type:'library',version:2,patches:l},'u-ma-biblioteca.json');};
+$('bExpLib').onclick=()=>{const l=libGet();if(!l.length){toast(tr('La biblioteca está vacía'));return;}download({app:'U-MA matriz de patcheo',type:'library',version:2,patches:l},'u-ma-biblioteca.json');};
 $('bImp').onclick=()=>$('fImp').click();
-$('fImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{importObj(JSON.parse(r.result));}catch(err){toast('El archivo no es un patch válido');}e.target.value='';};r.readAsText(f);};
+$('fImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{importObj(JSON.parse(r.result));}catch(err){toast(tr('El archivo no es un patch válido'));}e.target.value='';};r.readAsText(f);};
 
 /* ================== arranque ================== */
 (function boot(){
@@ -1038,7 +1328,7 @@ $('fImp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileRe
    if(s&&s.data){restore(s.data,s.name||'Sin título');if(s.edited)setName(curName,true);return;}
  }catch(e){}
  loadPreset('Básico');
- setInfo('Tocá un punto de la matriz para poner o sacar una clavija. Encendé el audio con el botón magenta de arriba.');
+ setInfo(tr('Tocá un punto de la matriz para poner o sacar una clavija. Encendé el audio con el botón magenta de arriba.'));
 })();
 })();
 </script>
